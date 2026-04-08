@@ -9,6 +9,7 @@ import franchise_api.domain.model.Product;
 import franchise_api.domain.model.TopStockProduct;
 import franchise_api.infrastructure.web.handler.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
@@ -141,5 +142,19 @@ class FranchiseControllerTest {
 				.expectBody()
 				.jsonPath("$.code").isEqualTo("INTERNAL_ERROR")
 				.jsonPath("$.message").isEqualTo("Unexpected server error");
+	}
+
+	@Test
+	void shouldReturnServiceUnavailableWhenDatabaseFails() {
+		when(franchiseUseCase.getAllFranchises())
+				.thenReturn(Flux.error(new DataAccessResourceFailureException("mongo unavailable")));
+
+		webTestClient.get()
+				.uri("/api/franchises")
+				.exchange()
+				.expectStatus().isEqualTo(503)
+				.expectBody()
+				.jsonPath("$.code").isEqualTo("DATABASE_UNAVAILABLE")
+				.jsonPath("$.message").isEqualTo("Database temporarily unavailable");
 	}
 }

@@ -5,6 +5,7 @@ import franchise_api.domain.exception.NotFoundException;
 import franchise_api.infrastructure.web.dto.response.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.support.WebExchangeBindException;
@@ -39,6 +40,13 @@ public class GlobalExceptionHandler {
 				.orElse("Validation error");
 		return ResponseEntity.badRequest()
 				.body(new ErrorResponse("VALIDATION_ERROR", message, Instant.now()));
+	}
+
+	@ExceptionHandler(DataAccessException.class)
+	public ResponseEntity<ErrorResponse> handleDataAccess(DataAccessException exception) {
+		LOGGER.error("Database access error while processing request", exception);
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(new ErrorResponse("DATABASE_UNAVAILABLE", "Database temporarily unavailable", Instant.now()));
 	}
 
 	@ExceptionHandler(Exception.class)
