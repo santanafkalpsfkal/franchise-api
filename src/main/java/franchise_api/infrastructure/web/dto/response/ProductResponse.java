@@ -1,0 +1,4 @@
+package franchise_api.infrastructure.web.dto.response;
+
+public record ProductResponse(String id, String name, int stock) {
+}
