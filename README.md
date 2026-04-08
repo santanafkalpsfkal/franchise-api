@@ -2,18 +2,6 @@
 
 API reactiva para administrar franquicias, sucursales y productos.
 
-## Despliegue en nube
-
-- API publicada en Render: `https://franchise-api-mqip.onrender.com`
-- Endpoint publico base: `https://franchise-api-mqip.onrender.com/`
-- Endpoint publico de estado: `https://franchise-api-mqip.onrender.com/health`
-- Health check: `https://franchise-api-mqip.onrender.com/actuator/health`
-
-Variables esperadas en el despliegue:
-
-- `MONGODB_URI`
-- `SERVER_PORT=8080`
-
 ## Stack
 
 - Spring Boot 3.5.13
@@ -42,7 +30,9 @@ Variables esperadas en el despliegue:
 - `MONGODB_URI`: `mongodb://localhost:27017/franchise_db`
 - `SERVER_PORT`: `8080`
 
-Para usar una cadena externa, puedes definir `MONGODB_URI` en un archivo `.env` en la raiz del proyecto.
+## Nota sobre persistencia
+
+La solución utiliza MongoDB en entorno local mediante Docker para facilitar la ejecución y evaluación. No obstante, la aplicación es completamente compatible con proveedores en la nube como MongoDB Atlas mediante la configuración de la variable de entorno `MONGODB_URI`.
 
 ## Ejecución local
 
@@ -57,13 +47,6 @@ docker run -d --name franchise-mongodb -p 27017:27017 mongo:7.0
 ```powershell
 $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17'
 $env:Path="$env:JAVA_HOME\bin;$env:Path"
-```
-
-Si usas MongoDB Atlas u otra instancia externa, crea `.env` con:
-
-```dotenv
-MONGODB_URI=tu_cadena_de_conexion
-SERVER_PORT=8080
 ```
 
 3. Ejecutar pruebas:
