@@ -1,5 +1,12 @@
 package franchise_api.application.service;
 
+import franchise_api.application.port.in.command.AddBranchCommand;
+import franchise_api.application.port.in.command.AddProductCommand;
+import franchise_api.application.port.in.command.CreateFranchiseCommand;
+import franchise_api.application.port.in.command.RenameBranchCommand;
+import franchise_api.application.port.in.command.RenameFranchiseCommand;
+import franchise_api.application.port.in.command.RenameProductCommand;
+import franchise_api.application.port.in.command.UpdateProductStockCommand;
 import franchise_api.application.port.in.FranchiseUseCase;
 import franchise_api.application.port.out.FranchiseRepository;
 import franchise_api.domain.exception.NotFoundException;
@@ -21,21 +28,26 @@ public class FranchiseService implements FranchiseUseCase {
 	}
 
 	@Override
-	public Mono<Franchise> createFranchise(String name) {
-		return franchiseRepository.save(new Franchise(null, name, List.of()));
+	public Flux<Franchise> getAllFranchises() {
+		return franchiseRepository.findAll();
 	}
 
 	@Override
-	public Mono<Franchise> addBranch(String franchiseId, String branchName) {
-		return getFranchise(franchiseId)
-				.map(franchise -> franchise.addBranch(branchName))
+	public Mono<Franchise> createFranchise(CreateFranchiseCommand command) {
+		return franchiseRepository.save(new Franchise(null, command.name(), List.of()));
+	}
+
+	@Override
+	public Mono<Franchise> addBranch(AddBranchCommand command) {
+		return getFranchise(command.franchiseId())
+				.map(franchise -> franchise.addBranch(command.branchName()))
 				.flatMap(franchiseRepository::save);
 	}
 
 	@Override
-	public Mono<Franchise> addProduct(String franchiseId, String branchId, String productName, int stock) {
-		return getFranchise(franchiseId)
-				.map(franchise -> franchise.addProduct(branchId, productName, stock))
+	public Mono<Franchise> addProduct(AddProductCommand command) {
+		return getFranchise(command.franchiseId())
+				.map(franchise -> franchise.addProduct(command.branchId(), command.productName(), command.stock()))
 				.flatMap(franchiseRepository::save);
 	}
 
@@ -48,9 +60,9 @@ public class FranchiseService implements FranchiseUseCase {
 	}
 
 	@Override
-	public Mono<Franchise> updateProductStock(String franchiseId, String branchId, String productId, int stock) {
-		return getFranchise(franchiseId)
-				.map(franchise -> franchise.updateProductStock(branchId, productId, stock))
+	public Mono<Franchise> updateProductStock(UpdateProductStockCommand command) {
+		return getFranchise(command.franchiseId())
+				.map(franchise -> franchise.updateProductStock(command.branchId(), command.productId(), command.stock()))
 				.flatMap(franchiseRepository::save);
 	}
 
@@ -61,23 +73,23 @@ public class FranchiseService implements FranchiseUseCase {
 	}
 
 	@Override
-	public Mono<Franchise> renameFranchise(String franchiseId, String newName) {
-		return getFranchise(franchiseId)
-				.map(franchise -> franchise.rename(newName))
+	public Mono<Franchise> renameFranchise(RenameFranchiseCommand command) {
+		return getFranchise(command.franchiseId())
+				.map(franchise -> franchise.rename(command.newName()))
 				.flatMap(franchiseRepository::save);
 	}
 
 	@Override
-	public Mono<Franchise> renameBranch(String franchiseId, String branchId, String newName) {
-		return getFranchise(franchiseId)
-				.map(franchise -> franchise.renameBranch(branchId, newName))
+	public Mono<Franchise> renameBranch(RenameBranchCommand command) {
+		return getFranchise(command.franchiseId())
+				.map(franchise -> franchise.renameBranch(command.branchId(), command.newName()))
 				.flatMap(franchiseRepository::save);
 	}
 
 	@Override
-	public Mono<Franchise> renameProduct(String franchiseId, String branchId, String productId, String newName) {
-		return getFranchise(franchiseId)
-				.map(franchise -> franchise.renameProduct(branchId, productId, newName))
+	public Mono<Franchise> renameProduct(RenameProductCommand command) {
+		return getFranchise(command.franchiseId())
+				.map(franchise -> franchise.renameProduct(command.branchId(), command.productId(), command.newName()))
 				.flatMap(franchiseRepository::save);
 	}
 

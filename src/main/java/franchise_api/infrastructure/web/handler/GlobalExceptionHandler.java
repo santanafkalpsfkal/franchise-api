@@ -3,6 +3,8 @@ package franchise_api.infrastructure.web.handler;
 import franchise_api.domain.exception.DomainException;
 import franchise_api.domain.exception.NotFoundException;
 import franchise_api.infrastructure.web.dto.response.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.support.WebExchangeBindException;
@@ -14,6 +16,8 @@ import java.time.Instant;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException exception) {
@@ -35,5 +39,12 @@ public class GlobalExceptionHandler {
 				.orElse("Validation error");
 		return ResponseEntity.badRequest()
 				.body(new ErrorResponse("VALIDATION_ERROR", message, Instant.now()));
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
+		LOGGER.error("Unhandled error while processing request", exception);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new ErrorResponse("INTERNAL_ERROR", "Unexpected server error", Instant.now()));
 	}
 }

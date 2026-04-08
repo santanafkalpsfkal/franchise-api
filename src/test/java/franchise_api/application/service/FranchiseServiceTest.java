@@ -1,5 +1,9 @@
 package franchise_api.application.service;
 
+import franchise_api.application.port.in.command.AddBranchCommand;
+import franchise_api.application.port.in.command.AddProductCommand;
+import franchise_api.application.port.in.command.CreateFranchiseCommand;
+import franchise_api.application.port.in.command.UpdateProductStockCommand;
 import franchise_api.application.port.out.FranchiseRepository;
 import franchise_api.domain.exception.NotFoundException;
 import franchise_api.domain.model.Branch;
@@ -10,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -32,11 +37,24 @@ class FranchiseServiceTest {
 	}
 
 	@Test
+	void shouldReturnAllFranchises() {
+		when(franchiseRepository.findAll()).thenReturn(Flux.just(
+				new Franchise("fr-1", "Acme", List.of()),
+				new Franchise("fr-2", "Burger House", List.of())
+		));
+
+		StepVerifier.create(franchiseService.getAllFranchises())
+				.expectNextMatches(franchise -> franchise.id().equals("fr-1") && franchise.name().equals("Acme"))
+				.expectNextMatches(franchise -> franchise.id().equals("fr-2") && franchise.name().equals("Burger House"))
+				.verifyComplete();
+	}
+
+	@Test
 	void shouldCreateFranchise() {
 		when(franchiseRepository.save(any(Franchise.class)))
 				.thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-		StepVerifier.create(franchiseService.createFranchise("Acme"))
+		StepVerifier.create(franchiseService.createFranchise(new CreateFranchiseCommand("Acme")))
 				.assertNext(franchise -> {
 					org.junit.jupiter.api.Assertions.assertEquals("Acme", franchise.name());
 					org.junit.jupiter.api.Assertions.assertTrue(franchise.branches().isEmpty());
@@ -56,7 +74,7 @@ class FranchiseServiceTest {
 		when(franchiseRepository.save(any(Franchise.class)))
 				.thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-		StepVerifier.create(franchiseService.addProduct("fr-1", "br-1", "Coca-Cola", 10))
+		StepVerifier.create(franchiseService.addProduct(new AddProductCommand("fr-1", "br-1", "Coca-Cola", 10)))
 				.assertNext(updated -> {
 					Product product = updated.branches().get(0).products().get(0);
 					org.junit.jupiter.api.Assertions.assertEquals("Coca-Cola", product.name());
@@ -102,8 +120,25 @@ class FranchiseServiceTest {
 	void shouldFailWhenFranchiseDoesNotExist() {
 		when(franchiseRepository.findById("missing")).thenReturn(Mono.empty());
 
-		StepVerifier.create(franchiseService.addBranch("missing", "Centro"))
+		StepVerifier.create(franchiseService.addBranch(new AddBranchCommand("missing", "Centro")))
 				.expectErrorSatisfies(error -> org.junit.jupiter.api.Assertions.assertInstanceOf(NotFoundException.class, error))
 				.verify();
+	}
+
+	@Test
+	void shouldUpdateProductStock() {
+		Franchise franchise = new Franchise(
+				"fr-1",
+				"Acme",
+				List.of(new Branch("br-1", "Centro", List.of(new Product("p-1", "Coca-Cola", 10))))
+		);
+
+		when(franchiseRepository.findById("fr-1")).thenReturn(Mono.just(franchise));
+		when(franchiseRepository.save(any(Franchise.class)))
+				.thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+		StepVerifier.create(franchiseService.updateProductStock(new UpdateProductStockCommand("fr-1", "br-1", "p-1", 25)))
+				.assertNext(updated -> org.junit.jupiter.api.Assertions.assertEquals(25, updated.branches().get(0).products().get(0).stock()))
+				.verifyComplete();
 	}
 }

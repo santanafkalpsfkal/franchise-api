@@ -5,6 +5,7 @@ import franchise_api.domain.model.Franchise;
 import franchise_api.infrastructure.persistence.mongo.mapper.FranchiseDocumentMapper;
 import franchise_api.infrastructure.persistence.mongo.repository.SpringDataFranchiseRepository;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -14,6 +15,12 @@ public class FranchiseMongoRepositoryAdapter implements FranchiseRepository {
 
 	public FranchiseMongoRepositoryAdapter(SpringDataFranchiseRepository repository) {
 		this.repository = repository;
+	}
+
+	@Override
+	public Flux<Franchise> findAll() {
+		return repository.findAll()
+				.map(FranchiseDocumentMapper::toDomain);
 	}
 
 	@Override

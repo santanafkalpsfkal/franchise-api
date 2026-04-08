@@ -2,6 +2,54 @@
 
 API reactiva construida con Spring Boot WebFlux y MongoDB para administrar franquicias, sucursales y productos.
 
+## Estado de cumplimiento
+
+### Criterios obligatorios
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Proyecto en Spring Boot | Cumple | Spring Boot 3.5.13 en `pom.xml` |
+| Agregar nueva franquicia | Cumple | `POST /api/franchises` |
+| Agregar nueva sucursal | Cumple | `POST /api/franchises/{franchiseId}/branches` |
+| Agregar nuevo producto | Cumple | `POST /api/franchises/{franchiseId}/branches/{branchId}/products` |
+| Eliminar producto | Cumple | `DELETE /api/franchises/{franchiseId}/branches/{branchId}/products/{productId}` |
+| Modificar stock | Cumple | `PATCH /api/franchises/{franchiseId}/branches/{branchId}/products/{productId}/stock` |
+| Producto con mayor stock por sucursal | Cumple | `GET /api/franchises/{franchiseId}/top-stock-products` |
+| Persistencia con base de datos NoSQL | Cumple | MongoDB reactivo |
+| Programación reactiva | Cumple | WebFlux + Reactor + Reactive Mongo |
+| Unit tests | Cumple | `FranchiseServiceTest` y `FranchiseControllerTest` |
+| Docker | Cumple | `Dockerfile` y `docker-compose.yml` |
+| IaC | Cumple | Terraform en `infra/terraform` |
+| Clean Architecture | Cumple | capas `domain`, `application`, `infrastructure` |
+| Documentación de ejecución local | Cumple | este `README.md` |
+
+### Puntos extra
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Renombrar franquicia | Cumple | `PATCH /api/franchises/{franchiseId}/name` |
+| Renombrar sucursal | Cumple | `PATCH /api/franchises/{franchiseId}/branches/{branchId}/name` |
+| Renombrar producto | Cumple | `PATCH /api/franchises/{franchiseId}/branches/{branchId}/products/{productId}/name` |
+| Contenerización completa | Cumple | Docker + Docker Compose |
+| Pipeline de validación | Cumple | GitHub Actions en `.github/workflows/ci.yml` |
+| Health check | Cumple | `GET /actuator/health` |
+
+### Observación importante
+
+- La aplicación queda preparada para usar MongoDB local o un proveedor administrado en nube mediante la variable `MONGODB_URI`.
+- El aprovisionamiento IaC incluido en el repositorio cubre el entorno local con Docker y Terraform.
+
+## Checklist de la prueba
+
+- Spring Boot 3 con Java 17
+- Programacion reactiva con Spring WebFlux y Reactor
+- Persistencia con MongoDB reactivo
+- Clean Architecture por capas (`domain`, `application`, `infrastructure`)
+- Unit tests sobre caso de uso y capa HTTP
+- Docker y Docker Compose para ejecucion local
+- Terraform para aprovisionar MongoDB local como IaC
+- Endpoints extra para renombrar franquicia, sucursal y producto
+
 ## Qué cubre esta solución
 
 - Programación reactiva con Spring WebFlux y repositorio reactivo de MongoDB
@@ -33,7 +81,9 @@ La franquicia es el agregado principal. Cada documento persiste una franquicia c
 Variables soportadas:
 
 - `MONGODB_URI` default: `mongodb://localhost:27017/franchise_db`
+- `MONGODB_URI` en nube: por ejemplo una cadena de MongoDB Atlas
 - `SERVER_PORT` default: `8080`
+- Actuator habilitado en `http://localhost:8080/actuator/health`
 
 ## Ejecutar local con Maven
 
@@ -60,6 +110,18 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 
 ```powershell
 .\mvnw.cmd spring-boot:run
+```
+
+5. Validar rapidamente la API:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/franchises -ContentType 'application/json' -Body '{"name":"Franquicia Centro"}'
+```
+
+6. Verificar salud del servicio:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri http://localhost:8080/actuator/health
 ```
 
 ## Ejecutar con Docker Compose
@@ -96,7 +158,23 @@ terraform destroy -auto-approve
 
 ## Endpoints
 
-### 1. Crear franquicia
+### 1. Listar franquicias
+
+`GET /api/franchises`
+
+Respuesta ejemplo:
+
+```json
+[
+  {
+    "id": "fr-1",
+    "name": "Franquicia Centro",
+    "branches": []
+  }
+]
+```
+
+### 2. Crear franquicia
 
 `POST /api/franchises`
 
@@ -106,7 +184,7 @@ terraform destroy -auto-approve
 }
 ```
 
-### 2. Agregar sucursal a una franquicia
+### 3. Agregar sucursal a una franquicia
 
 `POST /api/franchises/{franchiseId}/branches`
 
@@ -116,7 +194,7 @@ terraform destroy -auto-approve
 }
 ```
 
-### 3. Agregar producto a una sucursal
+### 4. Agregar producto a una sucursal
 
 `POST /api/franchises/{franchiseId}/branches/{branchId}/products`
 
@@ -127,11 +205,11 @@ terraform destroy -auto-approve
 }
 ```
 
-### 4. Eliminar producto de una sucursal
+### 5. Eliminar producto de una sucursal
 
 `DELETE /api/franchises/{franchiseId}/branches/{branchId}/products/{productId}`
 
-### 5. Actualizar stock de producto
+### 6. Actualizar stock de producto
 
 `PATCH /api/franchises/{franchiseId}/branches/{branchId}/products/{productId}/stock`
 
@@ -141,7 +219,7 @@ terraform destroy -auto-approve
 }
 ```
 
-### 6. Obtener el producto con más stock por sucursal de una franquicia
+### 7. Obtener el producto con más stock por sucursal de una franquicia
 
 `GET /api/franchises/{franchiseId}/top-stock-products`
 
@@ -175,6 +253,12 @@ Body para cualquiera de los renombres:
 
 ## Ejemplo rápido con curl
 
+Listar franquicias:
+
+```bash
+curl http://localhost:8080/api/franchises
+```
+
 Crear franquicia:
 
 ```bash
@@ -183,13 +267,35 @@ curl -X POST http://localhost:8080/api/franchises \
   -d '{"name":"Franquicia Centro"}'
 ```
 
+Actualizar stock:
+
+```bash
+curl -X PATCH http://localhost:8080/api/franchises/{franchiseId}/branches/{branchId}/products/{productId}/stock \
+  -H "Content-Type: application/json" \
+  -d '{"stock":100}'
+```
+
+Health check:
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
 ## Pruebas incluidas
 
 - `FranchiseServiceTest`: valida la lógica central del caso de uso
 - `FranchiseControllerTest`: valida comportamiento HTTP y validaciones del controlador
 
+Comando de validacion:
+
+```powershell
+.\mvnw.cmd test
+```
+
 ## Observaciones para la entrega
 
 - La solución fue pensada para repositorio público y ejecución local rápida
-- Si vas a subirla a GitHub, conviene inicializar el repositorio y hacer commits pequeños por capa
-- Si quieres despliegue cloud como plus adicional, esta base permite extender a AWS, Azure o GCP sin cambiar la lógica de dominio
+- La persistencia se resolvió con un documento por franquicia y estructuras embebidas de sucursales y productos, suficiente para los casos de uso pedidos
+- La aplicación puede conectarse a MongoDB Atlas u otro proveedor Mongo compatible usando `MONGODB_URI` sin cambios de código
+- El repositorio incluye pipeline de CI para ejecutar pruebas automáticamente en GitHub Actions
+- Si quieres llevarlo a nube como plus adicional, esta base permite cambiar la infraestructura sin tocar la lógica de dominio

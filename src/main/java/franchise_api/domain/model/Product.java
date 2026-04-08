@@ -20,4 +20,4 @@ public record Product(String id, String name, int stock) {
 	public Product updateStock(int newStock) {
 		return new Product(id, name, newStock);
 	}
-	}
+}

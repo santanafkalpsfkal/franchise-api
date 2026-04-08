@@ -1,5 +1,12 @@
 package franchise_api.infrastructure.web;
 
+import franchise_api.application.port.in.command.AddBranchCommand;
+import franchise_api.application.port.in.command.AddProductCommand;
+import franchise_api.application.port.in.command.CreateFranchiseCommand;
+import franchise_api.application.port.in.command.RenameBranchCommand;
+import franchise_api.application.port.in.command.RenameFranchiseCommand;
+import franchise_api.application.port.in.command.RenameProductCommand;
+import franchise_api.application.port.in.command.UpdateProductStockCommand;
 import franchise_api.application.port.in.FranchiseUseCase;
 import franchise_api.infrastructure.web.dto.request.AddBranchRequest;
 import franchise_api.infrastructure.web.dto.request.AddProductRequest;
@@ -33,10 +40,17 @@ public class FranchiseController {
 		this.franchiseUseCase = franchiseUseCase;
 	}
 
+	@GetMapping
+	public Flux<FranchiseResponse> getAllFranchises() {
+		return franchiseUseCase.getAllFranchises()
+				.map(FranchiseResponseMapper::toResponse);
+	}
+
 	@PostMapping
 	public Mono<ResponseEntity<FranchiseResponse>> createFranchise(@Valid @RequestBody Mono<CreateFranchiseRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.createFranchise(body.name()))
+				.map(body -> new CreateFranchiseCommand(body.name()))
+				.flatMap(franchiseUseCase::createFranchise)
 				.map(FranchiseResponseMapper::toResponse)
 				.map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
 	}
@@ -46,7 +60,8 @@ public class FranchiseController {
 			@PathVariable String franchiseId,
 			@Valid @RequestBody Mono<AddBranchRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.addBranch(franchiseId, body.name()))
+				.map(body -> new AddBranchCommand(franchiseId, body.name()))
+				.flatMap(franchiseUseCase::addBranch)
 				.map(FranchiseResponseMapper::toResponse)
 				.map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
 	}
@@ -57,7 +72,8 @@ public class FranchiseController {
 			@PathVariable String branchId,
 			@Valid @RequestBody Mono<AddProductRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.addProduct(franchiseId, branchId, body.name(), body.stock()))
+				.map(body -> new AddProductCommand(franchiseId, branchId, body.name(), body.stock()))
+				.flatMap(franchiseUseCase::addProduct)
 				.map(FranchiseResponseMapper::toResponse)
 				.map(response -> ResponseEntity.status(HttpStatus.CREATED).body(response));
 	}
@@ -78,7 +94,8 @@ public class FranchiseController {
 			@PathVariable String productId,
 			@Valid @RequestBody Mono<UpdateStockRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.updateProductStock(franchiseId, branchId, productId, body.stock()))
+				.map(body -> new UpdateProductStockCommand(franchiseId, branchId, productId, body.stock()))
+				.flatMap(franchiseUseCase::updateProductStock)
 				.map(FranchiseResponseMapper::toResponse);
 	}
 
@@ -93,7 +110,8 @@ public class FranchiseController {
 			@PathVariable String franchiseId,
 			@Valid @RequestBody Mono<RenameRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.renameFranchise(franchiseId, body.name()))
+				.map(body -> new RenameFranchiseCommand(franchiseId, body.name()))
+				.flatMap(franchiseUseCase::renameFranchise)
 				.map(FranchiseResponseMapper::toResponse);
 	}
 
@@ -103,7 +121,8 @@ public class FranchiseController {
 			@PathVariable String branchId,
 			@Valid @RequestBody Mono<RenameRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.renameBranch(franchiseId, branchId, body.name()))
+				.map(body -> new RenameBranchCommand(franchiseId, branchId, body.name()))
+				.flatMap(franchiseUseCase::renameBranch)
 				.map(FranchiseResponseMapper::toResponse);
 	}
 
@@ -114,7 +133,8 @@ public class FranchiseController {
 			@PathVariable String productId,
 			@Valid @RequestBody Mono<RenameRequest> request) {
 		return request
-				.flatMap(body -> franchiseUseCase.renameProduct(franchiseId, branchId, productId, body.name()))
+				.map(body -> new RenameProductCommand(franchiseId, branchId, productId, body.name()))
+				.flatMap(franchiseUseCase::renameProduct)
 				.map(FranchiseResponseMapper::toResponse);
 	}
 }
